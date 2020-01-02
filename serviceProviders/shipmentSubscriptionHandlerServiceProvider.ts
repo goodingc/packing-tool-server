@@ -65,9 +65,26 @@ export const shipmentSubscriptionHandlerServiceProvider = new GlobalServiceProvi
                                FROM purchase_order_products as pop
                                         LEFT OUTER JOIN purchase_order_product_boxes as popb
                                                         ON popb.purchase_order_product_id = pop.id
-                               WHERE pop.id = :purchaseOrderProductId
+                                        LEFT JOIN boxes b ON b.id = popb.box_id
+                                        LEFT JOIN shipments s ON s.id = b.shipment_id
+                               WHERE pop.id = :purchaseOrderProductId AND s.open
                                GROUP BY pop.id) sums ON sums.id = pop.id
                  SET pop.allocated_quantity = IF(sums.allocated_quantity IS NULL, 0, sums.allocated_quantity)
+                 WHERE pop.id = :purchaseOrderProductId;`,
+            { shipmentId, purchaseOrderProductId }
+        );
+        db.execute(
+            `UPDATE purchase_order_products pop
+                    LEFT JOIN (SELECT pop.id,
+                                      SUM(popb.quantity) as allocated_quantity
+                               FROM purchase_order_products as pop
+                                        LEFT OUTER JOIN purchase_order_product_boxes as popb
+                                                        ON popb.purchase_order_product_id = pop.id
+                                        LEFT JOIN boxes b ON b.id = popb.box_id
+                                        LEFT JOIN shipments s ON s.id = b.shipment_id
+                               WHERE pop.id = :purchaseOrderProductId AND NOT s.open
+                               GROUP BY pop.id) sums ON sums.id = pop.id
+                 SET pop.shipped_quantity = IF(sums.allocated_quantity IS NULL, 0, sums.allocated_quantity)
                  WHERE pop.id = :purchaseOrderProductId;`,
             { shipmentId, purchaseOrderProductId }
         );
