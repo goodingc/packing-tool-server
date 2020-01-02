@@ -1,8 +1,8 @@
-import {Action} from "../../../micro-node";
-import {ReplyFunction} from "../../../micro-node/Message";
-import {DB} from "../../../serviceProviders/databaseServiceProvider";
-import {RequireInputsFunction} from "../../../micro-node/internalServiceProviderBundles/requireInputsServiceProviderBundle";
-import {ShipmentSubscriber} from "../../../serviceProviders/shipmentSubscriberServiceProvider";
+import { Action } from "../../../micro-node";
+import { ReplyFunction } from "../../../micro-node/Message";
+import { DB } from "../../../serviceProviders/databaseServiceProvider";
+import { RequireInputsFunction } from "../../../micro-node/internalServiceProviderBundles/requireInputsServiceProviderBundle";
+import { ShipmentSubscriber } from "../../../serviceProviders/shipmentSubscriberServiceProvider";
 
 export const getShipmentAllocationDataAction = new Action(
     "shipments/allocate/getData",
@@ -27,7 +27,7 @@ export const getShipmentAllocationDataAction = new Action(
                     );
                     return Promise.all([
                         db.query(
-                                `
+                            `
                                     SELECT s.id, s.fulfillment_center_id
                                     FROM shipments s
                                     WHERE s.id = :shipmentId
@@ -37,7 +37,7 @@ export const getShipmentAllocationDataAction = new Action(
                             }
                         ),
                         db.query(
-                                `
+                            `
                                     SELECT pop.id,
                                            pop.title,
                                            pop.purchase_order_id,
@@ -51,24 +51,37 @@ export const getShipmentAllocationDataAction = new Action(
                                 purchaseOrderProductId
                             }
                         ),
-                        db.query(`SELECT SUM(quantity) otherwise_allocated
+                        db.query(
+                            `SELECT COALESCE(SUM(quantity), 0) otherwise_allocated
                                   FROM purchase_order_product_boxes popb
                                            LEFT JOIN boxes b ON b.id = popb.box_id
                                   WHERE popb.purchase_order_product_id = :purchaseOrderProductId
                                     AND shipment_id != :shipmentId
-                                  GROUP BY popb.purchase_order_product_id`, {
-                            purchaseOrderProductId,
-                            shipmentId
-                        })
+                                  GROUP BY popb.purchase_order_product_id`,
+                            {
+                                purchaseOrderProductId,
+                                shipmentId
+                            }
+                        )
                     ]);
                 })
-                .then(([[shipment], [purchaseOrderProduct], [{otherwiseAllocated}]]) => {
-                    return {
-                        shipment,
-                        purchaseOrderProduct,
-                        otherwiseAllocated
-                    };
-                })
+                .then(
+                    ([
+                        [shipment],
+                        [purchaseOrderProduct],
+                        otherwiseAllocatedData
+                    ]) => {
+                        return {
+                            shipment,
+                            purchaseOrderProduct,
+                            otherwiseAllocated:
+                                otherwiseAllocatedData.length > 0
+                                    ? otherwiseAllocatedData[0]
+                                          .otherwiseAllocated
+                                    : 0
+                        };
+                    }
+                )
         );
     }
 );
