@@ -62,8 +62,8 @@ export const shipmentSubscriptionHandlerServiceProvider = new GlobalServiceProvi
             `UPDATE purchase_order_products pop
                     LEFT JOIN (SELECT pop.id,
                                       SUM(popb.quantity) as allocated_quantity
-                               FROM packing_tool_backup.purchase_order_products as pop
-                                        LEFT OUTER JOIN packing_tool_backup.purchase_order_product_boxes as popb
+                               FROM purchase_order_products as pop
+                                        LEFT OUTER JOIN purchase_order_product_boxes as popb
                                                         ON popb.purchase_order_product_id = pop.id
                                WHERE pop.id = :purchaseOrderProductId
                                GROUP BY pop.id) sums ON sums.id = pop.id

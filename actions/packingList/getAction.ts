@@ -32,7 +32,6 @@ export const getPackingListAction = new Action(
                              LEFT JOIN purchase_orders po ON pop.purchase_order_id = po.id
                              LEFT JOIN fulfillment_centers fc ON po.fulfillment_center_id = fc.id
                              LEFT JOIN shipments aship ON fc.active_shipment_id = aship.id
-                    WHERE pop.allocated_quantity < pop.accepted_quantity
                       AND pop.accepted_quantity > 0`
                 )
                 .then(purchaseOrderProducts =>
