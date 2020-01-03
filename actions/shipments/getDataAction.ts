@@ -30,7 +30,9 @@ export const getShipmentDataAction = new Action(
                     {
                         shipmentId
                     }
-                );
+                ).then(([shipment]) => {
+                    return shipment
+                })
             })
         );
     }
