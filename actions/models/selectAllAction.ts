@@ -16,7 +16,7 @@ export const selectAllModelAction = new Action(
                 "model"
             ).then(([model]) =>
                 getGlobalServicePayload<DB>("db").query(
-                    "SELECT * FROM " + snake(model)
+                    "SELECT * FROM packing_tool." + snake(model)
                 )
             )
         );

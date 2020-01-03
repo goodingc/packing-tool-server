@@ -3,10 +3,13 @@ import { databaseServiceProvider } from "./serviceProviders/databaseServiceProvi
 import { selectAllModelAction } from "./actions/models/selectAllAction";
 import { getPackingListAction } from "./actions/packingList/getAction";
 import { getShipmentAllocationDataAction } from "./actions/shipments/allocate/getDataAction";
-import { shipmentSubscriptionHandlerServiceProvider } from "./serviceProviders/shipmentSubscriptionHandlerServiceProvider";
-import {shipmentSubscriberServiceProvider} from "./serviceProviders/shipmentSubscriberServiceProvider";
-import {addShipmentBoxesAction} from "./actions/shipments/addBoxesAction";
-import {saveAllocationAction} from "./actions/shipments/allocate/saveAction";
+import { addShipmentBoxesAction } from "./actions/shipments/addBoxesAction";
+import { saveAllocationAction } from "./actions/shipments/allocate/saveAction";
+import { getAllShipmentsAction } from "./actions/shipments/getAllAction";
+import { getShipmentDataAction } from "./actions/shipments/getDataAction";
+import { notificationServiceProvider } from "./serviceProviders/notificationServiceProvider";
+import { notificationSubscriberServiceProvider } from "./serviceProviders/notificationSubscriberServiceProvider";
+import { shipmentNotifierServiceProvider } from "./serviceProviders/shipmentNotifierServiceProvider";
 
 const server = new MicroNode(
     8002,
@@ -15,9 +18,11 @@ const server = new MicroNode(
         getPackingListAction,
         getShipmentAllocationDataAction,
         addShipmentBoxesAction,
-        saveAllocationAction
+        saveAllocationAction,
+        getAllShipmentsAction,
+        getShipmentDataAction
     ],
-    [databaseServiceProvider, shipmentSubscriptionHandlerServiceProvider],
-    [shipmentSubscriberServiceProvider],
+    [databaseServiceProvider, notificationServiceProvider],
+    [notificationSubscriberServiceProvider, shipmentNotifierServiceProvider],
     []
 );

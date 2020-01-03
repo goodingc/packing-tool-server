@@ -2,7 +2,7 @@ import { Action } from "../../../micro-node";
 import { ReplyFunction } from "../../../micro-node/Message";
 import { DB } from "../../../serviceProviders/databaseServiceProvider";
 import { RequireInputsFunction } from "../../../micro-node/internalServiceProviderBundles/requireInputsServiceProviderBundle";
-import { ShipmentSubscriber } from "../../../serviceProviders/shipmentSubscriberServiceProvider";
+import { ShipmentNotifier } from "../../../serviceProviders/shipmentNotifierServiceProvider";
 
 export const getShipmentAllocationDataAction = new Action(
     "shipments/allocate/getData",
@@ -18,9 +18,9 @@ export const getShipmentAllocationDataAction = new Action(
                 "purchaseOrderProductId"
             )
                 .then(([shipmentId, purchaseOrderProductId]) => {
-                    getConnectionServicePayload<ShipmentSubscriber>(
-                        "shipmentSubscriber"
-                    ).subscribe(
+                    getConnectionServicePayload<ShipmentNotifier>(
+                        "shipmentNotifier"
+                    ).subscribeToAllocation(
                         shipmentId,
                         purchaseOrderProductId,
                         getMessageServicePayload<string>("tag")
@@ -29,7 +29,7 @@ export const getShipmentAllocationDataAction = new Action(
                         db.query(
                             `
                                     SELECT s.id, s.fulfillment_center_id
-                                    FROM shipments s
+                                    FROM packing_tool.shipments s
                                     WHERE s.id = :shipmentId
                             `,
                             {
@@ -44,7 +44,7 @@ export const getShipmentAllocationDataAction = new Action(
                                            pop.accepted_quantity,
                                            pop.allocated_quantity,
                                            pop.sku
-                                    FROM purchase_order_products pop
+                                    FROM packing_tool.purchase_order_products pop
                                     WHERE pop.id = :purchaseOrderProductId
                             `,
                             {
@@ -53,11 +53,11 @@ export const getShipmentAllocationDataAction = new Action(
                         ),
                         db.query(
                             `SELECT COALESCE(SUM(quantity), 0) otherwise_allocated
-                                  FROM purchase_order_product_boxes popb
-                                           LEFT JOIN boxes b ON b.id = popb.box_id
-                                  WHERE popb.purchase_order_product_id = :purchaseOrderProductId
-                                    AND shipment_id != :shipmentId
-                                  GROUP BY popb.purchase_order_product_id`,
+                                 FROM packing_tool.purchase_order_product_boxes popb
+                                          LEFT JOIN packing_tool.boxes b ON b.id = popb.box_id
+                                 WHERE popb.purchase_order_product_id = :purchaseOrderProductId
+                                   AND shipment_id != :shipmentId
+                                 GROUP BY popb.purchase_order_product_id`,
                             {
                                 purchaseOrderProductId,
                                 shipmentId

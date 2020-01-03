@@ -15,7 +15,8 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB>(
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
             database: process.env.DB_SCHEMA,
-            namedPlaceholders: true
+            namedPlaceholders: true,
+            connectTimeout: 60000
         })
             .then(connection => {
                 localLogger.success("Connection successful");
@@ -43,8 +44,7 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB>(
                             .then(prepareData);
                     },
                     execute(sql: string, placeholders?: object) {
-                        return connection
-                            .execute(sql, placeholders)
+                        return connection.execute(sql, placeholders);
                     }
                 };
             })

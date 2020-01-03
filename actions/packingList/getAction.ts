@@ -28,10 +28,10 @@ export const getPackingListAction = new Action(
                                    po.delivery_window_end                       po_delivery_window_end,
                                    fc.id                                        fc_id,
                                    aship.id                                     aship_id
-                            FROM purchase_order_products pop
-                                     LEFT JOIN purchase_orders po ON pop.purchase_order_id = po.id
-                                     LEFT JOIN fulfillment_centers fc ON po.fulfillment_center_id = fc.id
-                                     LEFT JOIN shipments aship ON fc.active_shipment_id = aship.id
+                            FROM packing_tool.purchase_order_products pop
+                                     LEFT JOIN packing_tool.purchase_orders po ON pop.purchase_order_id = po.id
+                                     LEFT JOIN packing_tool.fulfillment_centers fc ON po.fulfillment_center_id = fc.id
+                                     LEFT JOIN packing_tool.shipments aship ON fc.active_shipment_id = aship.id
                             WHERE pop.shipped_quantity < pop.accepted_quantity
                               AND pop.accepted_quantity > 0`
                 )
