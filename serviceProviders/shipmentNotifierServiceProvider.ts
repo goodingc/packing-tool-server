@@ -141,11 +141,29 @@ export const shipmentNotifierServiceProvider = new ConnectionServiceProvider<
             );
         };
 
+        const updateShipped = (shipmentId: number) => {
+            db.execute(
+                `UPDATE packing_tool.purchase_order_products pop
+                    LEFT JOIN (SELECT pop.id,
+                                      SUM(popb.quantity) as allocated_quantity
+                               FROM packing_tool.purchase_order_products as pop
+                                        LEFT OUTER JOIN packing_tool.purchase_order_product_boxes as popb
+                                                        ON popb.purchase_order_product_id = pop.id
+                                        LEFT JOIN packing_tool.boxes b ON b.id = popb.box_id
+                                        LEFT JOIN packing_tool.shipments s ON s.id = b.shipment_id
+                               WHERE NOT s.open
+                               GROUP BY pop.id) sums ON sums.id = pop.id
+                 SET pop.shipped_quantity = COALESCE(sums.allocated_quantity, 0)`
+            ).then(() => {
+                notifications.notify(`shipments:${shipmentId}`);
+            });
+        };
+
         return Promise.resolve({
             subscribeToAllocation,
             updateAllocated,
             subscribeToShipment,
-            updateShipped: (shipmentId: number) => {}
+            updateShipped
         });
     }
 );
