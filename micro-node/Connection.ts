@@ -47,9 +47,12 @@ export class Connection {
             }
         );
 
-        this.exposeAsService<HandleCloseFunction>("handleClose", (handler: (code, desc) => void) => {
-            webSocketConnection.on("close", handler)
-        })
+        this.exposeAsService<HandleCloseFunction>(
+            "handleClose",
+            (handler: (code, desc) => void) => {
+                webSocketConnection.on("close", handler);
+            }
+        );
 
         this.exposeAsService("addAction", (action: Action) => {
             this.actions.push(action);

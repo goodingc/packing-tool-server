@@ -12,12 +12,18 @@ export const notificationSubscriberServiceProvider = new ConnectionServiceProvid
             "notifications"
         );
 
+        const unsubscribers: VoidFunction[] = [];
+
+        getConnectionServicePayload<HandleCloseFunction>("handleClose")(() =>
+            unsubscribers.forEach(unsubscriber => unsubscriber())
+        );
+
         const subscribe = (
             notificationName: string,
             handler: (data?: any) => void,
             handleNow?: boolean
         ) => {
-            getConnectionServicePayload<HandleCloseFunction>("handleClose")(
+            unsubscribers.push(
                 notifications.subscribe(notificationName, handler, handleNow)
             );
         };
