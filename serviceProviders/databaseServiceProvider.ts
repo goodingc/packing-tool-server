@@ -11,6 +11,8 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
             "localLogger"
         ).tag("DB");
 
+        let currentConnection = null;
+
         const tryConnection = (tries = 1): Promise<any> => {
             localLogger.info("connecting");
             return new Promise((resolve, reject) => {
@@ -22,7 +24,11 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
                     namedPlaceholders: true,
                     connectTimeout: 10000
                 })
-                    .then(resolve)
+                    .then(connection => {
+                        currentConnection = connection;
+                        localLogger.success("Connection successful");
+                        resolve(connection);
+                    })
                     .catch(reason => {
                         if (tries < 100) {
                             localLogger.warning(
@@ -43,35 +49,57 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
                     });
             });
         };
+        const prepareData = ([results, meta]) => {
+            const cache = {};
+            const cacheCamel = (snake: string) => {
+                if (cache[snake]) return cache[snake];
+                cache[snake] = camel(snake);
+                return cache[snake];
+            };
+            return results.map(result => {
+                const camelResult = {};
+                for (const snakeName in result) {
+                    if (!result.hasOwnProperty(snakeName)) continue;
+                    camelResult[cacheCamel(snakeName)] = result[snakeName];
+                }
+                return camelResult;
+            });
+        };
+
+        const query = (sql: string, placeholders?: object) => {
+            return currentConnection
+                .query(sql, placeholders)
+                .catch(reason => {
+                    localLogger.warning(
+                        "Connection dropped. Reconnecting, reason:",
+                        reason
+                    );
+                    return tryConnection().then(() => {
+                        return query(sql, placeholders);
+                    });
+                })
+                .then(prepareData);
+        };
+
+        const execute = (sql: string, placeholders?: object) => {
+            return currentConnection
+                .execute(sql, placeholders)
+                .catch(reason => {
+                    localLogger.warning(
+                        "Connection dropped. Reconnecting, reason:",
+                        reason
+                    );
+                    return tryConnection().then(() => {
+                        return execute(sql, placeholders);
+                    });
+                });
+        };
+
         return tryConnection()
             .then(connection => {
-                localLogger.success("Connection successful");
-                const prepareData = ([results, meta]) => {
-                    const cache = {};
-                    const cacheCamel = (snake: string) => {
-                        if (cache[snake]) return cache[snake];
-                        cache[snake] = camel(snake);
-                        return cache[snake];
-                    };
-                    return results.map(result => {
-                        const camelResult = {};
-                        for (const snakeName in result) {
-                            if (!result.hasOwnProperty(snakeName)) continue;
-                            camelResult[cacheCamel(snakeName)] =
-                                result[snakeName];
-                        }
-                        return camelResult;
-                    });
-                };
                 return {
-                    query(sql: string, placeholders?: object) {
-                        return connection
-                            .query(sql, placeholders)
-                            .then(prepareData);
-                    },
-                    execute(sql: string, placeholders?: object) {
-                        return connection.execute(sql, placeholders);
-                    }
+                    query,
+                    execute
                 };
             })
             .catch(err => {

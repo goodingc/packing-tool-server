@@ -11,6 +11,9 @@ import { notificationServiceProvider } from "./serviceProviders/notificationServ
 import { notificationSubscriberServiceProvider } from "./serviceProviders/notificationSubscriberServiceProvider";
 import { shipmentNotifierServiceProvider } from "./serviceProviders/shipmentNotifierServiceProvider";
 import { closeShipmentAction } from "./actions/shipments/closeAction";
+import { stockTakeProductSearchAction } from "./actions/stockTake/productSearchAction";
+import { stockTakeSubmitChangeAction } from "./actions/stockTake/submitChangeAction";
+import { getStockTakeQuantitiesAction } from "./actions/stockTake/getQuantitiesAction";
 
 const server = new MicroNode(
     8002,
@@ -22,7 +25,10 @@ const server = new MicroNode(
         saveAllocationAction,
         getAllShipmentsAction,
         getShipmentDataAction,
-        closeShipmentAction
+        closeShipmentAction,
+        stockTakeProductSearchAction,
+        stockTakeSubmitChangeAction,
+        getStockTakeQuantitiesAction
     ],
     [databaseServiceProvider, notificationServiceProvider],
     [notificationSubscriberServiceProvider, shipmentNotifierServiceProvider],

@@ -1,6 +1,6 @@
-import {Action} from "../../micro-node";
-import {ReplyFunction} from "../../micro-node/Message";
-import {DB} from "../../serviceProviders/databaseServiceProvider";
+import { Action } from "../../micro-node";
+import { ReplyFunction } from "../../micro-node/Message";
+import { DB } from "../../serviceProviders/databaseServiceProvider";
 
 export const getPackingListAction = new Action(
     "packingList/get",
@@ -12,7 +12,7 @@ export const getPackingListAction = new Action(
         getMessageServicePayload<ReplyFunction>("reply")(
             getGlobalServicePayload<DB>("db")
                 .query(
-                        `
+                    `
                             SELECT pop.id,
                                    pop.sku,
                                    pop.title,
@@ -33,24 +33,25 @@ export const getPackingListAction = new Action(
                                      LEFT JOIN packing_tool.fulfillment_centers fc ON po.fulfillment_center_id = fc.id
                                      LEFT JOIN packing_tool.shipments aship ON fc.active_shipment_id = aship.id
                             WHERE pop.shipped_quantity < pop.accepted_quantity
-                              AND pop.accepted_quantity > 0`
+                              AND pop.accepted_quantity > 0
+                              AND NOT po.cancelled`
                 )
                 .then(purchaseOrderProducts =>
                     purchaseOrderProducts.map(
                         ({
-                             id,
-                             sku,
-                             title,
-                             ean,
-                             allocatedQuantity,
-                             unshippedQuantity,
-                             prepRequired,
-                             poId,
-                             poDeliveryWindowStart,
-                             poDeliveryWindowEnd,
-                             fcId,
-                             ashipId
-                         }) => {
+                            id,
+                            sku,
+                            title,
+                            ean,
+                            allocatedQuantity,
+                            unshippedQuantity,
+                            prepRequired,
+                            poId,
+                            poDeliveryWindowStart,
+                            poDeliveryWindowEnd,
+                            fcId,
+                            ashipId
+                        }) => {
                             return {
                                 id,
                                 sku,
