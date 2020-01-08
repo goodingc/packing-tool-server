@@ -96,7 +96,9 @@ export class Message {
                                     JSON.stringify({
                                         action,
                                         payload,
-                                        tag: getMessageServicePayload<string>("tag")
+                                        tag: getMessageServicePayload<string>(
+                                            "tag"
+                                        )
                                     })
                                 );
                             });
@@ -152,6 +154,9 @@ export class Message {
             [globalServices, connectionServices]
         ).then(messageServices => {
             this.messageServices = messageServices;
+            const messageServicePayloadResolverFactory = MessageServiceProvider.servicePayloadResolverFactory(
+                messageServices
+            );
             for (const action of actions) {
                 if (action.name === this.actionName) {
                     action.handle(
@@ -161,14 +166,15 @@ export class Message {
                         ConnectionServiceProvider.servicePayloadResolverFactory(
                             connectionServices
                         ),
-                        MessageServiceProvider.servicePayloadResolverFactory(
-                            messageServices
-                        )
+                        messageServicePayloadResolverFactory
                     );
                     return;
                 }
             }
-            logger.warning("No action found for", this.actionName)
+            messageServicePayloadResolverFactory<ReplyFunction>("reply")(
+                Promise.reject(`No action found for ${this.actionName}`)
+            );
+            logger.warning("No action found for", this.actionName);
         });
     }
 
@@ -181,4 +187,4 @@ export class Message {
     }
 }
 
-export type ReplyFunction = (payload: Promise<any> | any) => void
+export type ReplyFunction = (payload: Promise<any> | any) => void;

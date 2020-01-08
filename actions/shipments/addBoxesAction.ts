@@ -28,7 +28,7 @@ export const addShipmentBoxesAction = new Action(
                     return db
                         .query(
                             `SELECT COUNT(b.id) box_count
-                                 FROM boxes b
+                                 FROM packing_tool.boxes b
                                  WHERE shipment_id = :shipmentId
                                  GROUP BY b.shipment_id;`,
                             {

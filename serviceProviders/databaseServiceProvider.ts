@@ -1,5 +1,9 @@
 import { GlobalServiceProvider } from "../micro-node";
-import { createConnection } from "mysql2/promise";
+import {
+    createConnection,
+    PromiseConnection,
+    createPool
+} from "mysql2/promise";
 import { LocalLogger } from "../micro-node/LocalLogger";
 import { camel } from "case";
 
@@ -11,44 +15,14 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
             "localLogger"
         ).tag("DB");
 
-        let currentConnection = null;
+        let connectionPool = createPool({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_SCHEMA,
+            namedPlaceholders: true
+        });
 
-        const tryConnection = (tries = 1): Promise<any> => {
-            localLogger.info("connecting");
-            return new Promise((resolve, reject) => {
-                return createConnection({
-                    host: process.env.DB_HOST,
-                    user: process.env.DB_USER,
-                    password: process.env.DB_PASSWORD,
-                    database: process.env.DB_SCHEMA,
-                    namedPlaceholders: true,
-                    connectTimeout: 10000
-                })
-                    .then(connection => {
-                        currentConnection = connection;
-                        localLogger.success("Connection successful");
-                        resolve(connection);
-                    })
-                    .catch(reason => {
-                        if (tries < 100) {
-                            localLogger.warning(
-                                `Connection failed, tries ${tries}, reason:`,
-                                reason
-                            );
-                            setTimeout(
-                                () => resolve(tryConnection(tries++)),
-                                500
-                            );
-                        } else {
-                            localLogger.error(
-                                `Connection failed, aborting, reason:`,
-                                reason
-                            );
-                            reject(reason);
-                        }
-                    });
-            });
-        };
         const prepareData = ([results, meta]) => {
             const cache = {};
             const cacheCamel = (snake: string) => {
@@ -67,48 +41,36 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
         };
 
         const query = (sql: string, placeholders?: object) => {
-            return currentConnection
+            return connectionPool
                 .query(sql, placeholders)
-                .catch(reason => {
+                .catch(error => {
                     localLogger.warning(
-                        "Connection dropped. Reconnecting, reason:",
-                        reason
+                        "Connection error. Message:",
+                        error.message
                     );
-                    return tryConnection().then(() => {
-                        return query(sql, placeholders);
-                    });
+                    return Promise.reject(error);
                 })
                 .then(prepareData);
         };
 
         const execute = (sql: string, placeholders?: object) => {
-            return currentConnection
-                .execute(sql, placeholders)
-                .catch(reason => {
-                    localLogger.warning(
-                        "Connection dropped. Reconnecting, reason:",
-                        reason
-                    );
-                    return tryConnection().then(() => {
-                        return execute(sql, placeholders);
-                    });
-                });
+            return connectionPool.execute(sql, placeholders).catch(error => {
+                localLogger.warning(
+                    "Connection error. Message:",
+                    error.message
+                );
+                return Promise.reject(error);
+            });
         };
 
-        return tryConnection()
-            .then(connection => {
-                return {
-                    query,
-                    execute
-                };
-            })
-            .catch(err => {
-                localLogger.error("Connection failed:", err);
-            });
+        return Promise.resolve({
+            query,
+            execute
+        });
     }
 );
 
 export interface DB {
-    query(query: string, placeholders?: object): Promise<[any]>;
-    execute(query: string, placeholders?: object): Promise<[any]>;
+    query(query: string, placeholders?: object): Promise<any[]>;
+    execute(query: string, placeholders?: object): Promise<any[]>;
 }
