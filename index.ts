@@ -16,7 +16,7 @@ import { stockTakeSubmitChangeAction } from "./actions/stockTake/submitChangeAct
 import { getStockTakeQuantitiesAction } from "./actions/stockTake/getQuantitiesAction";
 
 const server = new MicroNode(
-    8002,
+    8000,
     [
         selectAllModelAction,
         getPackingListAction,
