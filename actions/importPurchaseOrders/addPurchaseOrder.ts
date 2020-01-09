@@ -4,7 +4,7 @@ import { RequireInputsFunction } from "../../micro-node/internalServiceProviderB
 import { DB } from "../../serviceProviders/databaseServiceProvider";
 
 export const addPurchaseOrderAction = new Action(
-    "uploadData/addPurchaseOrder",
+    "importPurchaseOrders/addPurchaseOrder",
     (
         getGlobalServicePayload,
         getConnectionServicePayload,

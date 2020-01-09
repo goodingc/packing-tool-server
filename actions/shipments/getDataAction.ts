@@ -22,17 +22,19 @@ export const getShipmentDataAction = new Action(
                     shipmentId,
                     getMessageServicePayload<string>("tag")
                 );
-                return db.query(
-                    `SELECT s.id, s.fulfillment_center_id, s.id = fc.active_shipment_id active, s.open
+                return db
+                    .query(
+                        `SELECT s.id, s.fulfillment_center_id, s.id = fc.active_shipment_id active, s.open
                              FROM packing_tool.shipments s
                                       LEFT JOIN packing_tool.fulfillment_centers fc ON s.fulfillment_center_id = fc.id
                              WHERE s.id = :shipmentId`,
-                    {
-                        shipmentId
-                    }
-                ).then(([shipment]) => {
-                    return shipment
-                })
+                        {
+                            shipmentId
+                        }
+                    )
+                    .then(([shipment]) => {
+                        return shipment;
+                    });
             })
         );
     }

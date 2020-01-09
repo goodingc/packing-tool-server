@@ -14,7 +14,8 @@ import { closeShipmentAction } from "./actions/shipments/closeAction";
 import { stockTakeProductSearchAction } from "./actions/stockTake/productSearchAction";
 import { stockTakeSubmitChangeAction } from "./actions/stockTake/submitChangeAction";
 import { getStockTakeQuantitiesAction } from "./actions/stockTake/getQuantitiesAction";
-import { addPurchaseOrderAction } from "./actions/uploadData/addPurchaseOrder";
+import { addPurchaseOrderAction } from "./actions/importPurchaseOrders/addPurchaseOrder";
+import { swapShipmentBoxesAction } from "./actions/shipments/boxes/swapAction";
 
 const server = new MicroNode(
     8000,
@@ -30,7 +31,8 @@ const server = new MicroNode(
         stockTakeProductSearchAction,
         stockTakeSubmitChangeAction,
         getStockTakeQuantitiesAction,
-        addPurchaseOrderAction
+        addPurchaseOrderAction,
+        swapShipmentBoxesAction
     ],
     [databaseServiceProvider, notificationServiceProvider],
     [notificationSubscriberServiceProvider, shipmentNotifierServiceProvider],

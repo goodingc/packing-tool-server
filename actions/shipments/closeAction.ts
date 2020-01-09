@@ -45,7 +45,7 @@ export const closeShipmentAction = new Action(
                             .query(
                                 `SELECT *
                                      FROM packing_tool.shipments s
-                                     WHERE s.id = LAST_INSERT_ID()`
+                                     WHERE s.id = (SELECT MAX(id) from packing_tool.shipments)`
                             )
                             .then(([newShipment]) => {
                                 return Promise.all([
