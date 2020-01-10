@@ -23,24 +23,7 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
             namedPlaceholders: true
         });
 
-        const prepareData = ([results, meta]) => {
-            const cache = {};
-            const cacheCamel = (snake: string) => {
-                if (cache[snake]) return cache[snake];
-                cache[snake] = camel(snake);
-                return cache[snake];
-            };
-            return results.map(result => {
-                const camelResult = {};
-                for (const snakeName in result) {
-                    if (!result.hasOwnProperty(snakeName)) continue;
-                    camelResult[cacheCamel(snakeName)] = result[snakeName];
-                }
-                return camelResult;
-            });
-        };
-
-        const query = (sql: string, placeholders?: object) => {
+        const query = (sql: string, placeholders?: object | object[]) => {
             return connectionPool
                 .query(sql, placeholders)
                 .catch(error => {
@@ -50,17 +33,36 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
                     );
                     return Promise.reject(error);
                 })
-                .then(prepareData);
+                .then(([results, meta]) => {
+                    const cache = {};
+                    const cacheCamel = (snake: string) => {
+                        if (cache[snake]) return cache[snake];
+                        cache[snake] = camel(snake);
+                        return cache[snake];
+                    };
+                    return results.map(result => {
+                        const camelResult = {};
+                        for (const snakeName in result) {
+                            if (!result.hasOwnProperty(snakeName)) continue;
+                            camelResult[cacheCamel(snakeName)] =
+                                result[snakeName];
+                        }
+                        return camelResult;
+                    });
+                });
         };
 
-        const execute = (sql: string, placeholders?: object) => {
-            return connectionPool.execute(sql, placeholders).catch(error => {
-                localLogger.warning(
-                    "Connection error. Message:",
-                    error.message
-                );
-                return Promise.reject(error);
-            });
+        const execute = (sql: string, placeholders?: object | object[]) => {
+            return connectionPool
+                .execute(sql, placeholders)
+                .catch(error => {
+                    localLogger.warning(
+                        "Connection error. Message:",
+                        error.message
+                    );
+                    return Promise.reject(error);
+                })
+                .then(([meta]) => meta);
         };
 
         return Promise.resolve({
@@ -71,6 +73,6 @@ export const databaseServiceProvider = new GlobalServiceProvider<DB | void>(
 );
 
 export interface DB {
-    query(query: string, placeholders?: object): Promise<any[]>;
-    execute(query: string, placeholders?: object): Promise<any[]>;
+    query(query: string, placeholders?: object | object[]): Promise<any[]>;
+    execute(query: string, placeholders?: object | object[]): Promise<any[]>;
 }

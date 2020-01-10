@@ -29,8 +29,7 @@ export const addShipmentBoxesAction = new Action(
                         .query(
                             `SELECT COUNT(b.id) box_count
                                  FROM packing_tool.boxes b
-                                 WHERE shipment_id = :shipmentId
-                                 GROUP BY b.shipment_id;`,
+                                 WHERE shipment_id = :shipmentId`,
                             {
                                 shipmentId
                             }
@@ -46,7 +45,7 @@ export const addShipmentBoxesAction = new Action(
                                                     `(:firstIndex + ${i}, :shipmentId), `
                                                 );
                                             },
-                                            `INSERT INTO boxes (\`index\`, shipment_id)
+                                            `INSERT INTO packing_tool.boxes (\`index\`, shipment_id)
                                                  VALUES `
                                         )
                                         .slice(0, -2) + `;`,

@@ -68,19 +68,15 @@ export const shipmentNotifierServiceProvider = new ConnectionServiceProvider<
         ) => {
             db.execute(
                 `UPDATE packing_tool.purchase_order_products pop
-                        LEFT JOIN (SELECT pop.id,
-                                          SUM(popb.quantity) as allocated_quantity
-                                   FROM packing_tool.purchase_order_products as pop
-                                            LEFT OUTER JOIN packing_tool.purchase_order_product_boxes as popb
-                                                            ON popb.purchase_order_product_id = pop.id
-                                            LEFT JOIN packing_tool.boxes b ON b.id = popb.box_id
-                                            LEFT JOIN packing_tool.shipments s ON s.id = b.shipment_id
-                                   WHERE pop.id = :purchaseOrderProductId
-                                     AND s.open
-                                   GROUP BY pop.id) sums ON sums.id = pop.id
-                     SET pop.allocated_quantity = IF(sums.allocated_quantity IS NULL, 0, sums.allocated_quantity)
-                     WHERE pop.id = :purchaseOrderProductId;`,
-                { shipmentId, purchaseOrderProductId }
+                        LEFT JOIN (SELECT pop.id, COALESCE(SUM(popb.quantity), 0) quantity
+                                   FROM packing_tool.purchase_order_products pop
+                                            LEFT JOIN packing_tool.purchase_order_product_boxes popb
+                                                      on pop.id = popb.purchase_order_product_id
+                                            LEFT JOIN packing_tool.boxes b on popb.box_id = b.id
+                                            LEFT JOIN packing_tool.shipments s on b.shipment_id = s.id
+                                   WHERE s.open
+                                   GROUP BY pop.id) allocated_quantities ON allocated_quantities.id = pop.id
+                     SET pop.allocated_quantity = COALESCE(allocated_quantities.quantity, 0)`
             ).then(() => {
                 notifications.notify(`shipments:${shipmentId}`);
             });
@@ -146,31 +142,27 @@ export const shipmentNotifierServiceProvider = new ConnectionServiceProvider<
             Promise.all([
                 db.execute(
                     `UPDATE packing_tool.purchase_order_products pop
-                            LEFT JOIN (SELECT pop.id,
-                                              SUM(popb.quantity) as allocated_quantity
-                                       FROM packing_tool.purchase_order_products as pop
-                                                LEFT OUTER JOIN packing_tool.purchase_order_product_boxes as popb
-                                                                ON popb.purchase_order_product_id = pop.id
-                                                LEFT JOIN packing_tool.boxes b ON b.id = popb.box_id
-                                                LEFT JOIN packing_tool.shipments s ON s.id = b.shipment_id
+                            LEFT JOIN (SELECT pop.id, COALESCE(SUM(popb.quantity), 0) quantity
+                                       FROM packing_tool.purchase_order_products pop
+                                                LEFT JOIN packing_tool.purchase_order_product_boxes popb
+                                                          on pop.id = popb.purchase_order_product_id
+                                                LEFT JOIN packing_tool.boxes b on popb.box_id = b.id
+                                                LEFT JOIN packing_tool.shipments s on b.shipment_id = s.id
                                        WHERE NOT s.open
-                                       GROUP BY pop.id) sums ON sums.id = pop.id
-                         SET pop.shipped_quantity = COALESCE(sums.allocated_quantity, 0)`
+                                       GROUP BY pop.id) shipped_quantities ON shipped_quantities.id = pop.id
+                         SET pop.shipped_quantity = COALESCE(shipped_quantities.quantity, 0)`
                 ),
                 db.execute(
                     `UPDATE packing_tool.purchase_order_products pop
-                            RIGHT JOIN (SELECT pop.id,
-                                               SUM(popb.quantity) as allocated_quantity
-                                        FROM packing_tool.purchase_order_products as pop
-                                                 LEFT OUTER JOIN packing_tool.purchase_order_product_boxes as popb
-                                                                 ON popb.purchase_order_product_id = pop.id
-                                                 LEFT JOIN packing_tool.boxes b ON b.id = popb.box_id
-                                                 LEFT JOIN packing_tool.shipments s ON s.id = b.shipment_id
-                                        WHERE s.id = :shipmentId
-                                          AND s.open
-                                        GROUP BY pop.id) sums ON sums.id = pop.id
-                         SET pop.allocated_quantity = sums.allocated_quantity`,
-                    { shipmentId }
+                            LEFT JOIN (SELECT pop.id, COALESCE(SUM(popb.quantity), 0) quantity
+                                       FROM packing_tool.purchase_order_products pop
+                                                LEFT JOIN packing_tool.purchase_order_product_boxes popb
+                                                          on pop.id = popb.purchase_order_product_id
+                                                LEFT JOIN packing_tool.boxes b on popb.box_id = b.id
+                                                LEFT JOIN packing_tool.shipments s on b.shipment_id = s.id
+                                       WHERE s.open
+                                       GROUP BY pop.id) allocated_quantities ON allocated_quantities.id = pop.id
+                         SET pop.allocated_quantity = COALESCE(allocated_quantities.quantity, 0)`
                 )
             ]).then(() => {
                 notifications.notify(`shipments:${shipmentId}`);
