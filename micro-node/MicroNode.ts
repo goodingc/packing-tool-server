@@ -89,8 +89,6 @@ class MicroNode {
             });
         });
     }
-
-
 }
 
 export { MicroNode };

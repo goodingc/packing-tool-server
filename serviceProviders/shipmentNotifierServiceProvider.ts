@@ -74,9 +74,9 @@ export const shipmentNotifierServiceProvider = new ConnectionServiceProvider<
                                                       on pop.id = popb.purchase_order_product_id
                                             LEFT JOIN packing_tool.boxes b on popb.box_id = b.id
                                             LEFT JOIN packing_tool.shipments s on b.shipment_id = s.id
-                                   WHERE s.open
+                                   WHERE s.open AND pop.id = ${purchaseOrderProductId}
                                    GROUP BY pop.id) allocated_quantities ON allocated_quantities.id = pop.id
-                     SET pop.allocated_quantity = COALESCE(allocated_quantities.quantity, 0)`
+                     SET pop.allocated_quantity = COALESCE(allocated_quantities.quantity, 0) WHERE pop.id = ${purchaseOrderProductId}`
             ).then(() => {
                 notifications.notify(`shipments:${shipmentId}`);
             });
