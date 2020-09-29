@@ -22,6 +22,7 @@ import { clearInventoryAction } from "./actions/inventory/import/clearAction";
 import { getInventoryReportAction } from "./actions/inventory/report/getAction";
 import { stockTakeEditChangeAction } from "./actions/stockTake/editChange";
 import { getStockTakeRecentChangesAction } from "./actions/stockTake/getRecentChanges";
+import { getFulfillmentCentersAction } from "./actions/importPurchaseOrders/v2/getFulfillmentCentersAction";
 
 const server = new MicroNode(
     8000,
@@ -44,7 +45,8 @@ const server = new MicroNode(
         clearInventoryAction,
         getInventoryReportAction,
         stockTakeEditChangeAction,
-        getStockTakeRecentChangesAction
+        getStockTakeRecentChangesAction,
+        getFulfillmentCentersAction
     ],
     [databaseServiceProvider, notificationServiceProvider],
     [notificationSubscriberServiceProvider, shipmentNotifierServiceProvider],
