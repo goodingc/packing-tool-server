@@ -72,7 +72,9 @@ class MicroNode {
                 this.serverLogger.success(`Server listening on port ${port}`);
             });
             this.webSocketServer = new WebSocketServer({
-                httpServer
+                httpServer,
+                maxReceivedMessageSize: 10 * 1000 * 1000,
+                maxReceivedFrameSize: 10 * 1000 * 1000
             });
             this.webSocketServer.on("request", request => {
                 const webSocketConnection: WebSocketConnection = request.accept();
